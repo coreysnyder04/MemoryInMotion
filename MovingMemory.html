@@ -37,6 +37,7 @@
 				width: 100%;
 				height: 100%;
 				-webkit-backface-visibility: hidden;
+				background-color: rgb(20, 20, 155);
 			}
 			.face.back {
 				display: block;
@@ -55,6 +56,7 @@
 </head>
 <body>
 	<div class="wrapper">
+		<p>Matches Found: <strong data-bind="text: matchesFound"></strong></p>
 		<ul data-bind="foreach: cards" class="gridWrapper">
 
 			<li class="flip-container" data-bind="click: flipCard, click: $parent.cardClicked, css: state">
@@ -83,6 +85,7 @@
 	function FlashCard(cardContent){
 		var self = this;
 		self.imageSrc = 'http://lorempixel.com/175/175/animals/?' + Math.floor(Math.random()*1000); // Will hold the SRC for the image
+		self.imageSrc = ''; // Will hold the SRC for the image
 		self.state = ko.observable("idle"); // Is the card flipped over? (idle or flipped)
 		self.cardContent = cardContent;
 		self.uniqueID = cardContent;
@@ -96,7 +99,9 @@
 	// Overall viewmodel for this screen, along with initial state
 	function FlashCardViewModel() {
 		var self = this;
-		self.numOfUniques = 12;
+		self.readyForClicks = false;
+		self.numOfUniques = 4;
+		self.matchesFound = ko.observable(0);
 		self.firstCardFlipped = false;
 		self.state = 'waiting'; // Current Game State (waiting, oneflipped)
 		// Non-editable catalog data - would come from the server
@@ -112,11 +117,14 @@
 				self.cards.push(new FlashCard(cardContents)); // Run twice so there are matches
 				self.cards.push(new FlashCard(cardContents));
 			}
+
+			self.readyForClicks = true;
+			console.log(self.readyForClicks);
 		}
 
 		self.cardClicked = function(card){
 
-			console.log("Card was clicked", card);
+			if(!self.readyForClicks){ return; }
 			card.flipCard();
 
 			if(!self.firstCardFlipped){ // If no cards are flipped
@@ -125,7 +133,10 @@
 			}else{ // If card is flipped
 				if(card.uniqueID == self.firstCardFlipped.uniqueID){ // IF this card matches the 1st card clicked
 					console.log("Match Found");
+					self.matchesFound(self.matchesFound()+1);
+					self.resetClicks();
 				}else{
+					self.readyForClicks = false;
 					setTimeout(function(){
 						self.firstCardFlipped.state("idle");
 						card.state("idle");
@@ -133,14 +144,30 @@
 					}, 1500);
 				}
 			}
+
+			self.checkForWin();
+		}
+
+		self.checkForWin = function(){
+			console.log("Checking for win");
+			console.log(self.numOfUniques, self.matchesFound());
+			if(self.numOfUniques == self.matchesFound()){
+				alert("YOU WIN!");
+				self.resetGame();
+			}
 		}
 
 		self.resetClicks = function(){
+			self.readyForClicks = true;
 			self.firstCardFlipped = false;
 		}
 
 		self.sort = function(){
 
+		}
+
+		self.resetGame = function(){
+			console.log("Need to reset game")
 		}
 
 		self.startGame();
