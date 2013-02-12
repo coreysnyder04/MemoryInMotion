@@ -13,6 +13,7 @@
 		ul.gridWrapper{
 			padding: 0;
 			margin: 0;
+			position: relative;
 		}
 
 		/***** 3d CSS courtesy of https://www.webkit.org/blog/386/3d-transforms/ ***********/
@@ -21,6 +22,8 @@
 			.flip-container {
 				-webkit-perspective: 1000;
 				display: inline-block;
+				top: -300px;
+				left: 500px;
 			}
 			.flip-card {
 				width: 175px;
@@ -79,7 +82,7 @@
 		<p>Matches Found: <strong data-bind="text: matchesFound"></strong></p>
 		<ul data-bind="foreach: cards" class="gridWrapper">
 
-			<li class="flip-container" data-bind="click: flipCard, click: $parent.cardClicked, css: state, attr: {id: 'item_'+id }, style: { left: left+'px', top: top+'px' } ">
+			<li class="flip-container notPositioned" data-bind="click: flipCard, click: $parent.cardClicked, css: state, attr: {id: 'item_'+id }">
 				<div class="flip-card">
 					<div class="front face">
 						<img data-bind="attr:{src: imageSrc}" src="" alt=""/>
@@ -104,12 +107,9 @@
 	getDomObject = function(item) { console.log("#item_" + item.id); return $("#item_" + item.id); }
 
 	// Class to represent a single flash card in the grid
-	function FlashCard(cardContent, left, top){
+	function FlashCard(cardContent){
 		var self = this;
 
-		console.log(left,top);
-		self.left = left;
-		self.top = top;
 		positioned = false;
 
 		self.id =  Math.floor(Math.random()*10000);
@@ -145,9 +145,45 @@
 
 
 		self.positionCards = function(){
-			var left = -100, top = 100;
+			console.log("PositionCards");
+			var left = 0, top = 0, columns = 0, count = 0;
 			var maxColumns = 5;
+			var randomCardNum;
 
+			var cardsNotPositioned = $(".notPositioned");
+
+
+			console.log("cardsNotPositioned", cardsNotPositioned);
+			while(cardsNotPositioned.length > 0){
+				randomCardNum = (Math.ceil(Math.random() * (cardsNotPositioned.length - 0)))-1;
+
+
+				$(cardsNotPositioned[randomCardNum]).css("position", "absolute");
+				//$(cardsNotPositioned[randomCardNum]).css("-webkit-animation", "myship 10s");
+				//$(cardsNotPositioned[randomCardNum]).css("left", left);
+				//$(cardsNotPositioned[randomCardNum]).css("top", top);
+
+				$(cardsNotPositioned[randomCardNum]).animate({
+					left: left,
+					top: top
+				}, 1000, function() {
+					// Animation complete.
+				});
+
+
+				columns++;
+				count++
+				console.log("Columns", columns);
+				if(columns >= maxColumns){
+					columns = 0;
+					left = 0;
+					top = top + 190;
+				}else{
+					left = left + 190;
+				}
+
+				cardsNotPositioned.splice(randomCardNum, 1);
+			}
 
 
 		}
@@ -157,15 +193,14 @@
 			for(var i = 0; i < self.numOfUniques; i++){
 				var cardContents = Math.floor(Math.random()*100); // Generate Random Number
 
-				self.cards.push(new FlashCard(cardContents, left, top)); // Run twice so there are matches
-				self.cards.push(new FlashCard(cardContents, left, top));
+				self.cards.push(new FlashCard(cardContents)); // Run twice so there are matches
+				self.cards.push(new FlashCard(cardContents));
 			}
 		}
 
 		self.startGame = function() {
 
 			self.addCards();
-			self.positionCards();
 			self.readyForClicks = true;
 		}
 
@@ -251,6 +286,6 @@
 	console.log(flashCardGame);
 
 	$(function(){
-		flashCardGame.sort();
+		flashCardGame.positionCards();
 	});
 </script>
