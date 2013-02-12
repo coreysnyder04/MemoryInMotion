@@ -29,7 +29,6 @@
 				width: 175px;
 				height: 175px;
 				margin: 10px 10px 0 0;
-				border: 1px solid red;
 				-webkit-transform-style: preserve-3d;
 				-webkit-transition: -webkit-transform 1s;
 				animation:myship 10s;
@@ -113,7 +112,7 @@
 		positioned = false;
 
 		self.id =  Math.floor(Math.random()*10000);
-		self.imageSrc = 'http://lorempixel.com/175/175/animals/?' + self.id; // Will hold the SRC for the image
+		self.imageSrc = 'http://lorempixel.com/175/175/?' + self.id; // Will hold the SRC for the image
 		//self.imageSrc = ''; // Will hold the SRC for the image
 		self.state = ko.observable("idle"); // Is the card flipped over? (idle or flipped)
 		self.cardContent = cardContent;
@@ -137,7 +136,7 @@
 
 
 		self.readyForClicks = false;
-		self.numOfUniques = 4;
+		self.numOfUniques = 8;
 		self.matchesFound = ko.observable(0);
 		self.firstCardFlipped = false;
 		self.state = 'waiting'; // Current Game State (waiting, oneflipped)
@@ -239,7 +238,7 @@
 			self.readyForClicks = true;
 
 			setInterval(function(){
-				self.randomShuffle();
+				//self.randomShuffle();
 			}, self.shuffleInterval);
 
 		}
