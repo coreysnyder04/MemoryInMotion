@@ -2,6 +2,7 @@
 <html>
 <head>
 	<title>Moving Memory</title>
+	<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
 	<script type="text/javascript" src="js/knockout-2.2.1.js"></script>
 	<style type="text/css">
 		.wrapper{
@@ -28,6 +29,9 @@
 				border: 1px solid red;
 				-webkit-transform-style: preserve-3d;
 				-webkit-transition: -webkit-transform 1s;
+				animation:myship 10s;
+				-moz-animation:myship 10s; /* Firefox */
+				-webkit-animation:myship 10s; /* Safari and Chrome */
 			}
 			.flip-container.flipped .flip-card {
 				-webkit-transform: rotateY(180deg);
@@ -52,6 +56,22 @@
 			}
 		}
 
+		@keyframes myship
+		{
+			from {left: 480px;}
+			to{left:20px;}
+		}
+		@-moz-keyframes myship
+		{
+			from {left: 480px;}
+			to{left:20px;}
+		}
+		@-webkit-keyframes myship
+		{
+			from {left: 480px;}
+			to{left:20px;}
+		}
+
 	</style>
 </head>
 <body>
@@ -59,7 +79,7 @@
 		<p>Matches Found: <strong data-bind="text: matchesFound"></strong></p>
 		<ul data-bind="foreach: cards" class="gridWrapper">
 
-			<li class="flip-container" data-bind="click: flipCard, click: $parent.cardClicked, css: state">
+			<li class="flip-container" data-bind="click: flipCard, click: $parent.cardClicked, css: state, attr: {id: 'item_'+id }, style: { left: left+'px', top: top+'px' } ">
 				<div class="flip-card">
 					<div class="front face">
 						<img data-bind="attr:{src: imageSrc}" src="" alt=""/>
@@ -81,14 +101,24 @@
 
 <script type="text/javascript">
 
+	getDomObject = function(item) { console.log("#item_" + item.id); return $("#item_" + item.id); }
+
 	// Class to represent a single flash card in the grid
-	function FlashCard(cardContent){
+	function FlashCard(cardContent, left, top){
 		var self = this;
-		self.imageSrc = 'http://lorempixel.com/175/175/animals/?' + Math.floor(Math.random()*1000); // Will hold the SRC for the image
+
+		console.log(left,top);
+		self.left = left;
+		self.top = top;
+		positioned = false;
+
+		self.id =  Math.floor(Math.random()*10000);
+		self.imageSrc = 'http://lorempixel.com/175/175/animals/?' + self.id; // Will hold the SRC for the image
 		self.imageSrc = ''; // Will hold the SRC for the image
 		self.state = ko.observable("idle"); // Is the card flipped over? (idle or flipped)
 		self.cardContent = cardContent;
 		self.uniqueID = cardContent;
+
 
 		self.flipCard = function(){
 			console.log("Flipping Card");
@@ -99,6 +129,12 @@
 	// Overall viewmodel for this screen, along with initial state
 	function FlashCardViewModel() {
 		var self = this;
+
+		self.cardWidth = 175;
+		self.cardHeight = 175;
+
+
+
 		self.readyForClicks = false;
 		self.numOfUniques = 4;
 		self.matchesFound = ko.observable(0);
@@ -108,19 +144,31 @@
 		self.cards = ko.observableArray([]);
 
 
+		self.positionCards = function(){
+			var left = -100, top = 100;
+			var maxColumns = 5;
 
-		// Operations
-		self.startGame = function() {
+
+
+		}
+
+		self.addCards = function(){
+			var left = 0, top = 0;
 			for(var i = 0; i < self.numOfUniques; i++){
 				var cardContents = Math.floor(Math.random()*100); // Generate Random Number
 
-				self.cards.push(new FlashCard(cardContents)); // Run twice so there are matches
-				self.cards.push(new FlashCard(cardContents));
+				self.cards.push(new FlashCard(cardContents, left, top)); // Run twice so there are matches
+				self.cards.push(new FlashCard(cardContents, left, top));
 			}
-
-			self.readyForClicks = true;
-			console.log(self.readyForClicks);
 		}
+
+		self.startGame = function() {
+
+			self.addCards();
+			self.positionCards();
+			self.readyForClicks = true;
+		}
+
 
 		self.cardClicked = function(card){
 
@@ -163,6 +211,28 @@
 		}
 
 		self.sort = function(){
+			var card = self.cards()[1];
+			var cardDOM = getDomObject(card);
+
+			var randomCardNum = Math.ceil(Math.random() * (self.numOfUniques - 0)); // Pick a random number
+			var randomCardNumTwo = randomCardNum;
+
+			while(randomCardNum === randomCardNumTwo){
+				randomCardNumTwo = Math.ceil(Math.random() * (self.numOfUniques - 0)); // Pick a random number
+			}
+
+			console.log(randomCardNum, randomCardNumTwo);
+
+
+
+
+			/*
+			 $("#item_648").css("position", "absolute");
+			 $("#item_648").css("-webkit-animation", "myship 10s");
+			 */
+
+
+
 
 		}
 
@@ -170,9 +240,17 @@
 			console.log("Need to reset game")
 		}
 
+
 		self.startGame();
-		self.sort();
+
 	}
 
-	ko.applyBindings(new FlashCardViewModel());
+	flashCardGame = new FlashCardViewModel();
+	ko.applyBindings(flashCardGame);
+
+	console.log(flashCardGame);
+
+	$(function(){
+		flashCardGame.sort();
+	});
 </script>
