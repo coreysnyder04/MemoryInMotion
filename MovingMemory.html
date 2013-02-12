@@ -114,7 +114,7 @@
 
 		self.id =  Math.floor(Math.random()*10000);
 		self.imageSrc = 'http://lorempixel.com/175/175/animals/?' + self.id; // Will hold the SRC for the image
-		self.imageSrc = ''; // Will hold the SRC for the image
+		//self.imageSrc = ''; // Will hold the SRC for the image
 		self.state = ko.observable("idle"); // Is the card flipped over? (idle or flipped)
 		self.cardContent = cardContent;
 		self.uniqueID = cardContent;
@@ -132,6 +132,7 @@
 
 		self.cardWidth = 175;
 		self.cardHeight = 175;
+		self.shuffleInterval = 2000;
 
 
 
@@ -157,20 +158,13 @@
 			while(cardsNotPositioned.length > 0){
 				randomCardNum = (Math.ceil(Math.random() * (cardsNotPositioned.length - 0)))-1;
 
-
 				$(cardsNotPositioned[randomCardNum]).css("position", "absolute");
-				//$(cardsNotPositioned[randomCardNum]).css("-webkit-animation", "myship 10s");
-				//$(cardsNotPositioned[randomCardNum]).css("left", left);
-				//$(cardsNotPositioned[randomCardNum]).css("top", top);
-
 				$(cardsNotPositioned[randomCardNum]).animate({
 					left: left,
 					top: top
 				}, 1000, function() {
 					// Animation complete.
 				});
-
-
 				columns++;
 				count++
 				console.log("Columns", columns);
@@ -184,8 +178,47 @@
 
 				cardsNotPositioned.splice(randomCardNum, 1);
 			}
+		}
 
+		self.randomShuffle = function(){
+			console.log("Random ShuffLe");
+			var cardsArr = $(".flip-container");
 
+//			var card = self.cards()[1];
+//			var cardDOM = getDomObject(card);
+
+			var randomCardNum = (Math.ceil(Math.random() * (cardsArr.length - 0)))-1; // Pick a random number
+			var randomCardNumTwo = randomCardNum;
+
+			while(randomCardNum === randomCardNumTwo){
+				randomCardNumTwo = (Math.ceil(Math.random() * (cardsArr.length - 0)))-1; // Pick a random number
+			}
+
+			console.log(randomCardNum, randomCardNumTwo);
+
+			var cardOne = {
+				left: $(cardsArr[randomCardNum]).css("left"),
+				top: $(cardsArr[randomCardNum]).css("top")
+			};
+
+			var cardTwo = {
+				left: $(cardsArr[randomCardNumTwo]).css("left"),
+				top: $(cardsArr[randomCardNumTwo]).css("top")
+			};
+
+			$(cardsArr[randomCardNum]).animate({
+				left: cardTwo.left,
+				top: cardTwo.top
+			}, 1000, function() {
+				// Animation complete.
+			});
+
+			$(cardsArr[randomCardNumTwo]).animate({
+				left: cardOne.left,
+				top: cardOne.top
+			}, 1000, function() {
+				// Animation complete.
+			});
 		}
 
 		self.addCards = function(){
@@ -198,10 +231,17 @@
 			}
 		}
 
+
+
 		self.startGame = function() {
 
 			self.addCards();
 			self.readyForClicks = true;
+
+			setInterval(function(){
+				self.randomShuffle();
+			}, self.shuffleInterval);
+
 		}
 
 
@@ -243,32 +283,6 @@
 		self.resetClicks = function(){
 			self.readyForClicks = true;
 			self.firstCardFlipped = false;
-		}
-
-		self.sort = function(){
-			var card = self.cards()[1];
-			var cardDOM = getDomObject(card);
-
-			var randomCardNum = Math.ceil(Math.random() * (self.numOfUniques - 0)); // Pick a random number
-			var randomCardNumTwo = randomCardNum;
-
-			while(randomCardNum === randomCardNumTwo){
-				randomCardNumTwo = Math.ceil(Math.random() * (self.numOfUniques - 0)); // Pick a random number
-			}
-
-			console.log(randomCardNum, randomCardNumTwo);
-
-
-
-
-			/*
-			 $("#item_648").css("position", "absolute");
-			 $("#item_648").css("-webkit-animation", "myship 10s");
-			 */
-
-
-
-
 		}
 
 		self.resetGame = function(){
