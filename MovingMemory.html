@@ -46,7 +46,7 @@
 				font-size: 12pt;
 				color: white;
 				text-align: center;
-				background-color: #835A99;
+				background-color: rgb(44, 110, 155);
 				-webkit-border-radius: 10px;
 			}
 		}
@@ -57,14 +57,12 @@
 	<div class="wrapper">
 		<ul data-bind="foreach: cards" class="gridWrapper">
 
-			<li class="flip-container" data-bind="click: flipCard, css: state">
+			<li class="flip-container" data-bind="click: flipCard, click: $parent.cardClicked, css: state">
 				<div class="flip-card">
 					<div class="front face">
 						<img data-bind="attr:{src: imageSrc}" src="" alt=""/>
 					</div>
-					<div class="back face">
-						This flip effect is done entirely with 3D transforms and transitions—no JavaScript required!
-					</div>
+					<div class="back face" data-bind="text: cardContent"></div>
 				</div>
 
 
@@ -82,10 +80,12 @@
 <script type="text/javascript">
 
 	// Class to represent a single flash card in the grid
-	function FlashCard(){
+	function FlashCard(cardContent){
 		var self = this;
 		self.imageSrc = 'http://lorempixel.com/175/175/animals/?' + Math.floor(Math.random()*1000); // Will hold the SRC for the image
 		self.state = ko.observable("idle"); // Is the card flipped over? (idle or flipped)
+		self.cardContent = cardContent;
+		self.uniqueID = cardContent;
 
 		self.flipCard = function(){
 			console.log("Flipping Card");
@@ -96,7 +96,8 @@
 	// Overall viewmodel for this screen, along with initial state
 	function FlashCardViewModel() {
 		var self = this;
-		self.numOfCards = 25;
+		self.numOfUniques = 12;
+		self.firstCardFlipped = false;
 		self.state = 'waiting'; // Current Game State (waiting, oneflipped)
 		// Non-editable catalog data - would come from the server
 		self.cards = ko.observableArray([]);
@@ -105,12 +106,45 @@
 
 		// Operations
 		self.startGame = function() {
-			for(var i = 0; i < self.numOfCards; i++){
-				self.cards.push(new FlashCard());
+			for(var i = 0; i < self.numOfUniques; i++){
+				var cardContents = Math.floor(Math.random()*100); // Generate Random Number
+
+				self.cards.push(new FlashCard(cardContents)); // Run twice so there are matches
+				self.cards.push(new FlashCard(cardContents));
 			}
 		}
 
+		self.cardClicked = function(card){
+
+			console.log("Card was clicked", card);
+			card.flipCard();
+
+			if(!self.firstCardFlipped){ // If no cards are flipped
+				// Increment Num of cards clicked
+				self.firstCardFlipped = card;
+			}else{ // If card is flipped
+				if(card.uniqueID == self.firstCardFlipped.uniqueID){ // IF this card matches the 1st card clicked
+					console.log("Match Found");
+				}else{
+					setTimeout(function(){
+						self.firstCardFlipped.state("idle");
+						card.state("idle");
+						self.resetClicks();
+					}, 1500);
+				}
+			}
+		}
+
+		self.resetClicks = function(){
+			self.firstCardFlipped = false;
+		}
+
+		self.sort = function(){
+
+		}
+
 		self.startGame();
+		self.sort();
 	}
 
 	ko.applyBindings(new FlashCardViewModel());
