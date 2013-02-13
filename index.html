@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Moving Memory</title>
+	<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+	<script type="text/javascript" src="js/knockout-2.2.1.js"></script>
+	<style type="text/css">
+        body{
+            margin: 0;
+        }
+        .header{
+            background-color: #383838;
+            box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.25);
+            border-top: 8px solid black;
+            padding: 15px;
+            color: white;
+            font-size: 19px;
+            text-align: center;
+        }
+		.wrapper{
+			width: 745px;
+			margin: 10px auto;
+		}
+		ul.gridWrapper{
+			padding: 0;
+			margin: 0;
+			position: relative;
+		}
+
+		/***** 3d CSS courtesy of https://www.webkit.org/blog/386/3d-transforms/ ***********/
+		@media all and (-webkit-transform-3d) {
+			/* Use the media query to determine if 3D transforms are supported */
+			.flip-container {
+				-webkit-perspective: 1000;
+				display: inline-block;
+				top: -300px;
+				left: 500px;
+			}
+			.flip-card {
+				width: 175px;
+				height: 175px;
+				margin: 10px 10px 0 0;
+				-webkit-transform-style: preserve-3d;
+				-webkit-transition: -webkit-transform 1s;
+				animation:myship 10s;
+				-moz-animation:myship 10s; /* Firefox */
+				-webkit-animation:myship 10s; /* Safari and Chrome */
+                cursor: pointer;
+
+			}
+			.flip-container.flipped .flip-card {
+				-webkit-transform: rotateY(180deg);
+			}
+            .flip-card img {
+                border-radius: 8px;
+            }
+			.face {
+				position: absolute;
+				width: 100%;
+				height: 100%;
+				-webkit-backface-visibility: hidden;
+				background-color: rgb(44, 110, 155);
+                border-radius: 8px;
+                box-shadow: 5px 4px 8px rgb(151, 151, 151);
+			}
+			.face.back {
+				display: block;
+				-webkit-transform: rotateY(180deg);
+				-webkit-box-sizing: border-box;
+				padding: 10px;
+				font-size: 12pt;
+				color: white;
+				text-align: center;
+				background-color: rgb(44, 110, 155);
+				-webkit-border-radius: 10px;
+
+                color: #fff;
+                text-shadow: 0px 1px 0px #999, 0px 2px 0px #888, 0px 3px 0px #777, 0px 4px 0px #666, 0px 5px 0px #555, 0px 6px 0px #444, 0px 7px 0px #333, 0px 8px 7px #001135;
+                font: 88px 'ChunkFiveRegular';
+                padding-top: 33px;
+			}
+		}
+
+		@keyframes myship
+		{
+			from {left: 480px;}
+			to{left:20px;}
+		}
+		@-moz-keyframes myship
+		{
+			from {left: 480px;}
+			to{left:20px;}
+		}
+		@-webkit-keyframes myship
+		{
+			from {left: 480px;}
+			to{left:20px;}
+		}
+
+	</style>
+</head>
+<body>
+    <div class="header">
+        Matches Found: <strong data-bind="text: matchesFound"></strong><br>
+        Missed Guesses: <strong data-bind="text: misses"></strong>
+    </div>
+	<div class="wrapper">
+		<ul data-bind="foreach: cards" class="gridWrapper">
+
+			<li class="flip-container notPositioned" data-bind="click: flipCard, click: $parent.cardClicked, css: state, attr: {id: 'item_'+id }">
+				<div class="flip-card">
+					<div class="front face" data-bind="style: { 'background-color': color }">
+                        <img data-bind="attr:{src: imageSrc}" src="" alt=""/>
+					</div>
+					<div class="back face" data-bind="text: cardContent, style: { 'background-color': color }">
+
+					</div>
+				</div>
+
+
+
+				<!--<div data-bind="if: flipped"><span data-bind="text: message"></span></div>-->
+				<!--<div data-bind="ifnot: flipped"><span data-bind="text: message"></span></div>-->
+				<!--<img data-bind="attr:{src: imageSrc}" src="" alt=""/>-->
+			</li>
+		</ul>
+	</div>
+
+</body>
+</html>
+
+<script type="text/javascript">
+
+    var niceColors = [
+        'rgb(155, 44, 44)',
+        'rgb(155, 44, 75)',
+        'rgb(155, 44, 124)',
+        'rgb(155, 44, 155)',
+        'rgb(128, 44, 155)',
+        'rgb(106, 44, 155)',
+        'rgb(71, 44, 155)',
+        'rgb(44, 44, 155)',
+        'rgb(44, 80, 155)',
+        'rgb(44, 115, 155)',
+        'rgb(44, 151, 155)',
+        'rgb(44, 155, 124)',
+        'rgb(44, 155, 84)',
+        'rgb(48, 155, 44)',
+        'rgb(84, 155, 44)',
+        'rgb(137, 155, 44)',
+        'rgb(155, 142, 44)',
+        'rgb(155, 111, 44)',
+        'rgb(155, 84, 44)',
+        'rgb(155, 66, 44)'
+    ]
+
+	getDomObject = function(item) { console.log("#item_" + item.id); return $("#item_" + item.id); }
+
+	// Class to represent a single flash card in the grid
+	function FlashCard(cardContent){
+		var self = this;
+
+		positioned = false;
+
+        self.color = niceColors[Math.ceil(Math.random() * (niceColors.length - 0))-1];
+		self.id =  Math.floor(Math.random()*10000);
+		self.imageSrc = 'http://lorempixel.com/175/175/?' + self.id; // Will hold the SRC for the image
+		//self.imageSrc = ''; // Will hold the SRC for the image
+		self.state = ko.observable("idle"); // Is the card flipped over? (idle or flipped)
+		self.cardContent = cardContent;
+		self.uniqueID = cardContent;
+
+
+		self.flipCard = function(){
+			console.log("Flipping Card");
+			self.state("flipped");
+		}
+	}
+
+	// Overall viewmodel for this screen, along with initial state
+	function FlashCardViewModel() {
+		var self = this;
+
+		self.cardWidth = 175;
+		self.cardHeight = 175;
+		self.shuffleInterval = 3500;
+
+
+
+		self.readyForClicks = false;
+		self.numOfUniques = 8;
+        self.misses = ko.observable(0);
+		self.matchesFound = ko.observable(0);
+		self.firstCardFlipped = false;
+		self.state = 'waiting'; // Current Game State (waiting, oneflipped)
+		// Non-editable catalog data - would come from the server
+		self.cards = ko.observableArray([]);
+
+
+		self.positionCards = function(){
+			console.log("PositionCards");
+			var left = 0, top = 0, columns = 0, count = 0;
+			var maxColumns = 4;
+			var randomCardNum;
+
+			var cardsNotPositioned = $(".notPositioned");
+
+
+			console.log("cardsNotPositioned", cardsNotPositioned);
+			while(cardsNotPositioned.length > 0){
+				randomCardNum = (Math.ceil(Math.random() * (cardsNotPositioned.length - 0)))-1;
+
+				$(cardsNotPositioned[randomCardNum]).css("position", "absolute");
+				$(cardsNotPositioned[randomCardNum]).animate({
+					left: left,
+					top: top
+				}, 1000, function() {
+					// Animation complete.
+				});
+				columns++;
+				count++
+				console.log("Columns", columns);
+				if(columns >= maxColumns){
+					columns = 0;
+					left = 0;
+					top = top + 190;
+				}else{
+					left = left + 190;
+				}
+
+				cardsNotPositioned.splice(randomCardNum, 1);
+			}
+		}
+
+		self.randomShuffle = function(){
+			var cardsArr = $(".flip-container:not(.flipped)");
+
+            if(cardsArr.length < 5){ return; }
+
+//			var card = self.cards()[1];
+//			var cardDOM = getDomObject(card);
+
+			var randomCardNum = (Math.ceil(Math.random() * (cardsArr.length - 0)))-1; // Pick a random number
+			var randomCardNumTwo = randomCardNum;
+
+			while(randomCardNum === randomCardNumTwo){
+				randomCardNumTwo = (Math.ceil(Math.random() * (cardsArr.length - 0)))-1; // Pick a random number
+			}
+
+			console.log(randomCardNum, randomCardNumTwo);
+
+			var cardOne = {
+				left: $(cardsArr[randomCardNum]).css("left"),
+				top: $(cardsArr[randomCardNum]).css("top")
+			};
+
+			var cardTwo = {
+				left: $(cardsArr[randomCardNumTwo]).css("left"),
+				top: $(cardsArr[randomCardNumTwo]).css("top")
+			};
+
+			$(cardsArr[randomCardNum]).animate({
+				left: cardTwo.left,
+				top: cardTwo.top
+			}, 1000, function() {
+				// Animation complete.
+			});
+
+			$(cardsArr[randomCardNumTwo]).animate({
+				left: cardOne.left,
+				top: cardOne.top
+			}, 1000, function() {
+				// Animation complete.
+			});
+		}
+
+		self.addCards = function(){
+			var left = 0, top = 0;
+			for(var i = 0; i < self.numOfUniques; i++){
+				var cardContents = Math.floor(Math.random()*100); // Generate Random Number
+
+				self.cards.push(new FlashCard(cardContents)); // Run twice so there are matches
+				self.cards.push(new FlashCard(cardContents));
+			}
+		}
+
+
+
+		self.startGame = function() {
+
+			self.addCards();
+			self.readyForClicks = true;
+
+			setInterval(function(){
+				self.randomShuffle();
+			}, self.shuffleInterval);
+
+		}
+
+
+		self.cardClicked = function(card){
+
+            console.log(card.state());
+            if(card.state() === "flipped"){ return; };
+
+			if(!self.readyForClicks){ return; }
+			card.flipCard();
+
+			if(!self.firstCardFlipped){ // If no cards are flipped
+                console.log("No card was flipped");
+				// Increment Num of cards clicked
+				self.firstCardFlipped = card;
+			}else{ // If card is flipped
+				if(card.uniqueID == self.firstCardFlipped.uniqueID){ // IF this card matches the 1st card clicked
+
+					console.log("Match Found");
+					self.matchesFound(self.matchesFound()+1);
+					self.resetClicks();
+				}else{
+                    self.misses(self.misses()+1);
+                    console.log("Match not found");
+					self.readyForClicks = false;
+					setTimeout(function(){
+						self.firstCardFlipped.state("idle");
+						card.state("idle");
+						self.resetClicks();
+					}, 750);
+				}
+			}
+
+			self.checkForWin();
+		}
+
+		self.checkForWin = function(){
+            console.log(self.numOfUniques, self.matchesFound);
+			if(self.numOfUniques == self.matchesFound()){
+				alert("YOU WIN!");
+				self.resetGame();
+			}
+		}
+
+		self.resetClicks = function(){
+			self.readyForClicks = true;
+			self.firstCardFlipped = false;
+		}
+
+		self.resetGame = function(){
+            self.misses = 0;
+            self.matches = 0;
+			console.log("Need to reset game")
+		}
+
+
+		self.startGame();
+
+	}
+
+	flashCardGame = new FlashCardViewModel();
+	ko.applyBindings(flashCardGame);
+
+	console.log(flashCardGame);
+
+	$(function(){
+		flashCardGame.positionCards();
+	});
+</script>
+
+<script type="text/javascript">
+
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-27130063-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+
+</script>
